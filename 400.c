@@ -70,10 +70,13 @@ void addBook() {
 	removeNewLine(newBook.author);
 
 	newBook.isBorrowed = 0;
-			
+	newBook.registor = *currentUser;
+	newBook.borrowor = *currentUser; // 초기 설정값			
+
+
 	library[bookCount++] = newBook;
 
-	newBook.registor = *currentUser;
+
 	printf("\n======도서가 추가되었습니다. 도서 번호: %d======\n", newBook.id);
 }
 
@@ -442,8 +445,6 @@ void loginUserWizard() {
 	}
 
 	
-
-
 }
 void setManager() {
 
@@ -501,6 +502,8 @@ int loginUser(char* id) {
 
 int main() {
 	int choice;
+
+
 
 	setManager();
 	initializeLibrary();
