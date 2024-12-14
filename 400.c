@@ -44,11 +44,14 @@ int maxBooks = 100; // 도서관에 수용 가능한 최대 도서 수
 
 
 
+
+
 /**
 	책을 추가하기 위한 함수입니다.
 */
 void addBook() {
 
+	
 	if (bookCount >= maxBooks)
 	{
 		printf("도서관이 가득 찼습니다. 더 이상 도서를 추가할 수 없습니다. \n");
@@ -69,13 +72,16 @@ void addBook() {
 	fgets(newBook.author, sizeof(newBook.author), stdin);
 	removeNewLine(newBook.author);
 
+	Soilder *user = (Soilder*) malloc(sizeof(Soilder));
+
+	user = currentUser;
+
 	newBook.isBorrowed = 0;
-	newBook.registor = *currentUser;
-	newBook.borrowor = *currentUser; // 초기 설정값			
+	newBook.registor = newBook.borrowor = *manager;
+				
 
 
 	library[bookCount++] = newBook;
-
 
 	printf("\n======도서가 추가되었습니다. 도서 번호: %d======\n", newBook.id);
 }
@@ -117,6 +123,7 @@ void borrowBook() {
 	printf("선택: ");
 
 	scanf("%d", &searchType);
+
 	getchar(); 
 
 	int found = 0;
@@ -164,7 +171,7 @@ void borrowBook() {
 		for (int i = 0; i < bookCount; i++)
 		{
 			if ((searchType == 2 && strstr(library[i].title, query) != NULL) ||
-				(searchType == 3 && strstr(library[i].author, query != NULL)))
+				(searchType == 3 && strstr(library[i].author, query) != NULL))
 			{
 
 				candidates[candidateCount++] = i;
@@ -220,7 +227,6 @@ void borrowBook() {
 	책을 반납하기 위해 제작한 함수입니다.
 */
 void returnBooks() {
-
 	int searchType;
 
 	printf("\n===== 대출 검색 방법 선택 =====\n");
@@ -235,53 +241,43 @@ void returnBooks() {
 
 	int found = 0;
 
-	if (searchType == 1)
-	{
+	if (searchType == 1) {
 		int id;
 		printf("반납할 도서 번호 : ");
 		scanf("%d", &id);
 
-		for (int i = 0; i < bookCount; i++)
-		{
+		for (int i = 0; i < bookCount; i++) {
 			if (library[i].id == id) {
-				
 				found = 1;
-				if (strcmp(library[i].borrowor.id, currentUser->id) != 0) {
-					printf("본인만 반납하실 수 있습니다.\n");
+
+				if (!library[i].isBorrowed) {
+					printf("도서 '%s' 는 이미 반납되었습니다. \n", library[i].title);
+				}
+				else if (strcmp(library[i].borrowor.name, currentUser->name) != 0 && strcmp(library[i].borrowor.name, manager->name) != 0) {
+					printf("본인이 대출한 도서만 반납할 수 있습니다.\n");
 				}
 				else {
-
-					if (!library[i].isBorrowed)
-					{
-						printf("도서 '%s' 는 이미 반납되었습니다. \n", library[i].title);
-					}
-					else {
-						library[i].isBorrowed = 0;
-
-						printf("도서 '%s' 가 반납되었습니다. \n", library[i].title);
-
-					}
-				} break;
+					library[i].isBorrowed = 0;
+					memset(&library[i].borrowor, 0, sizeof(Soilder)); // 대출자 정보 초기화
+					printf("도서 '%s' 가 반납되었습니다. \n", library[i].title);
+				}
+				break;
 			}
 		}
 	}
 	else if (searchType == 2 || searchType == 3) {
-
 		char query[100];
 		printf(searchType == 2 ? "반납할 도서 제목: " : "반납할 도서의 저자 이름: ");
 
 		fgets(query, sizeof(query), stdin);
-
 		removeNewLine(query);
 
 		int candidates[100];
 		int candidateCount = 0;
 
-		for (int i = 0; i < bookCount; i++)
-		{
+		for (int i = 0; i < bookCount; i++) {
 			if ((searchType == 2 && strstr(library[i].title, query) != NULL) ||
-				(searchType == 3 && strstr(library[i].author, query != NULL)))
-			{
+				(searchType == 3 && strstr(library[i].author, query) != NULL)) {
 
 				candidates[candidateCount++] = i;
 				printf("[%d] 도서 번호: %d\t 제목: %s\t 저자: %s\t 대출 여부: %s\n",
@@ -290,42 +286,34 @@ void returnBooks() {
 			}
 		}
 
-		if (candidateCount == 0)
-		{
+		if (candidateCount == 0) {
 			printf("검색 조건에 해당하는 도서를 찾을 수 없습니다. \n");
 			return;
 		}
-
 
 		int selection;
 		printf("반납할 도서의 번호를 선택하세요 (1~%d): ", candidateCount);
 		scanf("%d", &selection);
 
-		if (selection < 1 || selection > candidateCount)
-		{
+		if (selection < 1 || selection > candidateCount) {
 			printf("잘못된 선택입니다. \n");
 			return;
 		}
 
 		int selectedIndex = candidates[selection - 1];
-		if (!library[selectedIndex].isBorrowed)
-		{
+		if (!library[selectedIndex].isBorrowed) {
 			printf("도서 '%s' 는 이미 반납되었습니다. \n", library[selectedIndex].title);
 		}
+		else if (strcmp(library[selectedIndex].borrowor.name, currentUser->name) != 0 && strcmp(library[selectedIndex].borrowor.name, manager->name) != 0) {
+			printf("본인이 대출한 도서만 반납할 수 있습니다.\n");
+		}
 		else {
-
-			if (strcmp(library[selectedIndex].borrowor.id, currentUser->id) != 0) {
-				printf("본인만 반납하실 수 있습니다.\n"); // 본인확인
-			}
-
-			else {
-				library[selectedIndex].isBorrowed = 0;
-				printf("도서 '%s' 가 반납되었습니다. \n", library[selectedIndex].title);
-			}
+			library[selectedIndex].isBorrowed = 0;
+			memset(&library[selectedIndex].borrowor, 0, sizeof(Soilder)); // 대출자 정보 초기화
+			printf("도서 '%s' 가 반납되었습니다. \n", library[selectedIndex].title);
 		}
 	}
-	else
-	{
+	else {
 		printf("잘못된 선택입니다. \n");
 	}
 }
@@ -395,6 +383,7 @@ void registerUser(Soilder* newUser) {
 	strcpy(user[soilderCount]->RelationShip.id, newUser->RelationShip.id);
 
 	soilderCount++;
+
 }
 
 void registerUserWizard() {
@@ -428,10 +417,10 @@ void loginUserWizard() {
 
 	char id[240];
 
+	getchar();
 
 	while (1)
 	{
-		getchar();
 
 		printf("\n 로그인하실 군번을 입력하여 주세요 -> ");
 		fgets(id, sizeof(id), stdin);
@@ -469,6 +458,7 @@ void setManager() {
 	printf("담당관 소속 부대의 통상명칭을 입력하여 주십시오. ");
 	fgets(soilder->RelationShip.id, sizeof(soilder->RelationShip.id), stdin);
 	removeNewLine(soilder->RelationShip.id);
+
 
 	manager = soilder;
 	registerUser(soilder);
